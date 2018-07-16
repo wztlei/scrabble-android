@@ -3,6 +3,12 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
-    <color name="colorDefaultSquare">#DEB887</color>
+
+    <color name="colorRegularSquare">#E6D8CB</color>
+    <color name="colorTripleWordSquare">#FF4D4D</color>
+    <color name="colorDoubleWordSquare">#FFAAAA</color>
+    <color name="colorTripleLetterSquare">#0673E0</color>
+    <color name="colorDoubleLetterSquare">#B3D9FF</color>
+    <color name="colorTile">#E0A66C</color>
     <color name="colorWhite">#FFFFFF</color>
 </resources>
