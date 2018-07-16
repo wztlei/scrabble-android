@@ -35,11 +35,13 @@ public class  MainActivity extends AppCompatActivity {
         // Get the table by ID
         TableLayout tableLayout = findViewById(R.id.table_scrabble_board);
 
-        // Go through every button in the Table
-        for (int row = 0; row < tableLayout.getChildCount(); row++) {
+        // Go through every button in the Scrabble board
+        // getChildCount() is not used since there are items
+        // below the grid that should not be changed
+        for (int row = 0; row < 15; row++) {
             TableRow tableRow = (TableRow)tableLayout.getChildAt(row);
 
-            for (int col = 0; col < tableRow.getChildCount(); col++) {
+            for (int col = 0; col < 15; col++) {
 
                 // Change the height and width of the button to make it a square
                 View view = tableRow.getChildAt(col);
@@ -65,7 +67,8 @@ public class  MainActivity extends AppCompatActivity {
         // Get the tableRow and set its left padding
         TableLayout tableLayout = findViewById(R.id.table_scrabble_board);
         TableRow tableRow = (TableRow)tableLayout.getChildAt(15);
-        tableRow.setPadding(4 * displayWidth/15, displayWidth/15, 0, 0);
+        tableRow.setPadding(4 * displayWidth/15, displayWidth/15,
+                            0, displayWidth/15);
     }
 
     /**
@@ -107,14 +110,16 @@ public class  MainActivity extends AppCompatActivity {
         // Get the table by ID
         TableLayout tableLayout = findViewById(R.id.table_scrabble_board);
 
-        // Go through every button in the Table
-        for (int tableRowNum = 0; tableRowNum < tableLayout.getChildCount(); tableRowNum++) {
+        // Go through every button in the Scrabble board
+        // getChildCount() is not used since there are items
+        // below the grid that should not be changed
+        for (int tableRowNum = 0; tableRowNum < 15; tableRowNum++) {
 
             TableRow tableRow = (TableRow)tableLayout.getChildAt(tableRowNum);
 
-            for (int tableColNum = 0; tableColNum < tableRow.getChildCount(); tableColNum++) {
+            for (int tableColNum = 0; tableColNum < 15; tableColNum++) {
 
-                View view = tableRow.getChildAt(tableColNum);if(view instanceof Button) {
+                View view = tableRow.getChildAt(tableColNum);
                 Button square = findViewById(view.getId());
 
                 // Change the background to the proper drawable resource
@@ -130,7 +135,7 @@ public class  MainActivity extends AppCompatActivity {
                 if (tableRowNum == 7 && (tableColNum == 6 || tableColNum == 7 || tableColNum == 8 || tableColNum == 9|| tableColNum == 10)){
                     square.setBackgroundResource(R.drawable.tile_square);
                     square.setText("X");
-                }}
+                }
             }
         }
     }
