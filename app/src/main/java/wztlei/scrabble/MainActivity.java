@@ -43,15 +43,33 @@ public class  MainActivity extends AppCompatActivity {
 
                 // Change the height and width of the button to make it a square
                 View view = tableRow.getChildAt(col);
+                if (view instanceof  Button) {
                 Button square = findViewById(view.getId());
                 square.getLayoutParams().height = displayWidth/15;
-                square.getLayoutParams().width = displayWidth/15;
+                square.getLayoutParams().width = displayWidth/15;}
             }
         }
     }
 
     /**
-     *
+     * Sets the padding of the row of buttons displaying the tiles in the rack
+     * so that they are centered on the screen and the width of a square below the board.
+     */
+    protected void setTileRowPadding(){
+
+        // Get the width of the device in pixels
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int displayWidth = displayMetrics.widthPixels;
+
+        // Get the tableRow and set its left padding
+        TableLayout tableLayout = findViewById(R.id.table_scrabble_board);
+        TableRow tableRow = (TableRow)tableLayout.getChildAt(15);
+        tableRow.setPadding(4 * displayWidth/15, displayWidth/15, 0, 0);
+    }
+
+    /**
+     * Sets the colours of the buttons so that they reflect the colours of a Scrabble board
      */
     protected void setButtonColors(){
 
@@ -96,9 +114,8 @@ public class  MainActivity extends AppCompatActivity {
 
             for (int tableColNum = 0; tableColNum < tableRow.getChildCount(); tableColNum++) {
 
-                View view = tableRow.getChildAt(tableColNum);
+                View view = tableRow.getChildAt(tableColNum);if(view instanceof Button) {
                 Button square = findViewById(view.getId());
-
 
                 // Change the background to the proper drawable resource
                 switch (boardDataStrings.get(tableRowNum+1).charAt(tableColNum+1)) {
@@ -107,15 +124,17 @@ public class  MainActivity extends AppCompatActivity {
                     case 'L': square.setBackgroundResource(R.drawable.triple_letter_square); break;
                     case 'l': square.setBackgroundResource(R.drawable.double_letter_square); break;
                     case '.': square.setBackgroundResource(R.drawable.regular_square);       break;
+                    case 't': square.setBackgroundResource(R.drawable.tile_square);          break;
                 }
                 square.setText(" ");
                 if (tableRowNum == 7 && (tableColNum == 6 || tableColNum == 7 || tableColNum == 8 || tableColNum == 9|| tableColNum == 10)){
                     square.setBackgroundResource(R.drawable.tile_square);
                     square.setText("X");
-                }
+                }}
             }
         }
     }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,5 +143,6 @@ public class  MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         setButtonDimensions();
         setButtonColors();
+        setTileRowPadding();
     }
 }
