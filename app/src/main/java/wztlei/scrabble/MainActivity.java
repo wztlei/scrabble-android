@@ -196,6 +196,46 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * Fills the board with letters which are read from a text file.
+     *
+     * @param   board   a square grid containing the data for the state of the
+     *                  game.
+     */
+    public void readTestGameData (Square[][] board) {
+        // Open file containing the data
+        Scanner gameDataFile = null;
+        TextFileNames textFileNames = new TextFileNames();
+        String gameFileName = textFileNames.gameFileName;
+
+        try {
+            InputStream inputStream = getAssets().open(gameFileName);
+            gameDataFile = new Scanner (inputStream);
+        } catch (FileNotFoundException ex) {
+            System.out.println("Could not open " + gameFileName);
+        } catch (IOException ex) {
+            System.out.println("IOException due to " + gameFileName);
+        }
+
+        // Ensure file is open
+        if (gameDataFile != null) {
+            // Go through all the rows
+            for (int rowNum = 0; rowNum < 15; rowNum++) {
+                // Get each row as input
+                String input = gameDataFile.next();
+
+                // Go through all the rows
+                for (int colNum = 0; colNum < 15; colNum++) {
+                    // row+1 and row+1 are used since the top row and column
+                    // (row 0 and column 0) of board are used to mark outside
+                    // squares
+                    // Fill in the tiles on the board
+                    board[rowNum + 1][colNum + 1].letter = input.charAt(colNum);
+                }
+            }
+        }
+    }
+
+    /**
      * Changes the height and width of each button in the grid of Scrabble squares
      * so that they are squares and together they completely fill the device screen
      */
@@ -661,6 +701,29 @@ public class MainActivity extends AppCompatActivity {
 
         scrabbleEngine = new ScrabbleEngine(readWordData(), readTileData());
         scrabbleBoard = readBoardData();
+
+        // Create an warning Alert dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Welcome!!")
+                .setMessage("Do you want to load the example board?")
+                .setNegativeButton("Yes", new DialogInterface.OnClickListener() {
+                    // Load the example board
+                    public void onClick(DialogInterface dialog, int id) {
+                        readTestGameData(scrabbleBoard);
+                        setButtonTexts();
+                        setButtonColors();
+                    }
+                })
+                .setPositiveButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User cancelled the dialog
+                    }
+                });
+
+
+        // Get the AlertDialog from create()
+        AlertDialog dialog = builder.create();
+        dialog.show();
 
         if (savedInstanceState != null) {
 
