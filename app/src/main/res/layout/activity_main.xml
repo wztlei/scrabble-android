@@ -2152,7 +2152,7 @@
             android:backgroundTint="@color/colorPrimary"
             android:text="Enter"
             android:textColor="@color/colorWhite"
-            android:onClick="onClickEnterBoardTile"/>
+            android:onClick="onClickEnterBoardTile" />
     </TableRow>
 
     <TableRow
@@ -2180,7 +2180,8 @@
             android:layout_weight="1"
             android:backgroundTint="@color/colorPrimary"
             android:text="Enter"
-            android:textColor="@color/colorWhite" />
+            android:textColor="@color/colorWhite"
+            android:onClick="onClickEnterRackTiles" />
     </TableRow>
 
     <TableRow

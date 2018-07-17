@@ -1,10 +1,12 @@
 package wztlei.scrabble;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TableLayout;
@@ -164,15 +166,9 @@ public class  MainActivity extends AppCompatActivity {
                     case '.': square.setBackgroundResource(R.drawable.regular_square);       break;
                     case 't': square.setBackgroundResource(R.drawable.tile_square);          break;
                 }
-                square.setText(" ");
-                if (tableRowNum == 7 && (tableColNum == 6 || tableColNum == 7 || tableColNum == 8 || tableColNum == 9|| tableColNum == 10)){
-                    square.setBackgroundResource(R.drawable.tile_square);
-                    square.setText("X");
-                }
             }
         }
     }
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -187,13 +183,58 @@ public class  MainActivity extends AppCompatActivity {
         lastSquareClickedID = 0;
     }
 
+    /**
+     * Function is called to hide the keyboard
+     *
+     * @param activity the activity where the keyboard needs to be hidden
+     */
+    public static void hideKeyboard(Activity activity) {
+        InputMethodManager imm = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
+
+        //Find the currently focused view, so we can grab the correct window token from it.
+        View view = activity.getCurrentFocus();
+
+        //If no view currently has focus, create a new one, just so we can grab a window token from it
+        if (view == null) {
+            view = new View(activity);
+        }
+
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    }
+
+    public static void showKeyboard(Activity activity) {
+        InputMethodManager imm = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
+
+        //Find the currently focused view, so we can grab the correct window token from it.
+        View view = activity.getCurrentFocus();
+
+        //If no view currently has focus, create a new one, just so we can grab a window token from it
+        if (view == null) {
+            view = new View(activity);
+        }
+
+        imm.showSoftInput(view, 0);
+    }
+
+    /**
+     * Function is called when the user clicks "Enter" to change a tile on the board
+     *
+     * @param view the ID of the button whose border needs to be changed to white
+     */
     public void onClickEnterBoardTile(View view) {
 
         if (lastSquareClickedID != 0) {
+            // Change the text displayed on the tile on the board
             Button boardSquare = findViewById(lastSquareClickedID);
             EditText boardEditText = findViewById(R.id.edit_text_board);
             String inputtedTileLetter = boardEditText.getText().toString();
             boardSquare.setText(inputtedTileLetter);
+
+            // Hide the keyboard
+            hideKeyboard(this);
+
+            // Change the background of the button
+            drawButtonBlackBorder(lastSquareClickedID);
         }
     }
 
@@ -210,6 +251,12 @@ public class  MainActivity extends AppCompatActivity {
         int rowNum = boardButtonIDs.get(buttonID).row;
         int colNum = boardButtonIDs.get(buttonID).col;
         char squareChar = boardStrings.get(rowNum).charAt(colNum);
+
+        // Use the tile background if the button has a tile on it
+        if (boardSquare.getText().length() > 0 && !boardSquare.getText().equals(" ")) {
+            boardSquare.setBackgroundResource(R.drawable.tile_square);
+            return;
+        }
 
         // Change the background of the current button to the proper drawable resource
         // This will cause the button to have a black border
@@ -249,6 +296,14 @@ public class  MainActivity extends AppCompatActivity {
         int colNum = boardButtonIDs.get(buttonID).col;
         char squareChar = boardStrings.get(rowNum).charAt(colNum);
 
+        System.out.println(boardSquare.getText());
+
+        // Use the tile background if the button has a tile on it
+        if (boardSquare.getText().length() > 0 && !boardSquare.getText().equals(" ")) {
+            boardSquare.setBackgroundResource(R.drawable.tile_square_pressed);
+            return;
+        }
+
         // Change the background of the current button to the proper drawable resource
         // This will cause the button to have a black border
         switch (squareChar) {
@@ -283,12 +338,14 @@ public class  MainActivity extends AppCompatActivity {
         int currButtonID = view.getId();
         Button boardSquare = findViewById(currButtonID);
 
+        showKeyboard(this);
+
         // Set the text of the input text box (to change a tile on the board)
         // to the text currently on the button
         EditText boardEditText = findViewById(R.id.edit_text_board);
         boardEditText.setText(boardSquare.getText());
         boardEditText.requestFocus();
-
+        boardEditText.selectAll();
 
         // Change the borders of the last button pressed
         if (lastSquareClickedID != 0) {
@@ -302,4 +359,12 @@ public class  MainActivity extends AppCompatActivity {
         lastSquareClickedID = view.getId();
     }
 
+    /**
+     * Function is called when the user clicks "Enter" to change the tiles in the rack
+     *
+     * @param view the ID of the button whose border needs to be changed to white
+     */
+    public void onClickEnterRackTiles(View view) {
+        hideKeyboard(this);
+    }
 }
