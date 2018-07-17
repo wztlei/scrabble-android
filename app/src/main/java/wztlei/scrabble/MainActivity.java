@@ -2,6 +2,8 @@ package wztlei.scrabble;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -19,11 +21,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
-public class  MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
 
     ArrayList<String> boardStrings;
     HashMap<Integer, Square> boardButtonIDs;
     int lastSquareClickedID;
+    ScrabbleEngine scrabbleEngine;
 
     /**
      * Changes the height and width of each button in the grid of Scrabble squares
@@ -51,28 +54,6 @@ public class  MainActivity extends AppCompatActivity {
                 square.getLayoutParams().width = displayWidth / 15;
             }
         }
-    }
-
-    /**
-     * Sets the padding of the row of buttons displaying the tiles in the rack
-     * so that they are centered on the screen and the width of a square below the board.
-     */
-    protected void setTileRowPadding() {
-
-        // Get the width of the device in pixels
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        int displayWidth = displayMetrics.widthPixels;
-
-        // Get the tableRow and set its left padding
-        TableLayout tableLayout = findViewById(R.id.table_scrabble_board);
-
-        // Convert from pixels to density-independent pixels
-        float pxToDPscale = getResources().getDisplayMetrics().density;
-        int _20DP = (int) (20*pxToDPscale + 0.5f);
-
-        TableRow tableRow = (TableRow)tableLayout.getChildAt(15);
-        tableRow.setPadding(displayWidth/15, _20DP, _20DP, 0);
     }
 
     protected void readBoardStrings() {
@@ -179,6 +160,12 @@ public class  MainActivity extends AppCompatActivity {
         storeButtonIDs();
         setButtonDimensions();
         setButtonColors();
+        scrabbleEngine = new ScrabbleEngine();
+
+        // Change the SelectAllOnFocus for the EditText field
+        // since the property is not working in the XML
+        EditText rackEditText = findViewById(R.id.edit_text_rack);
+        rackEditText.setSelectAllOnFocus(true);
 
         lastSquareClickedID = 0;
     }
@@ -189,7 +176,8 @@ public class  MainActivity extends AppCompatActivity {
      * @param activity the activity where the keyboard needs to be hidden
      */
     public static void hideKeyboard(Activity activity) {
-        InputMethodManager imm = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
+        InputMethodManager imm = (InputMethodManager) activity.getSystemService
+                                                                (Activity.INPUT_METHOD_SERVICE);
 
         //Find the currently focused view, so we can grab the correct window token from it.
         View view = activity.getCurrentFocus();
@@ -199,7 +187,9 @@ public class  MainActivity extends AppCompatActivity {
             view = new View(activity);
         }
 
-        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
 
     public static void showKeyboard(Activity activity) {
@@ -213,7 +203,9 @@ public class  MainActivity extends AppCompatActivity {
             view = new View(activity);
         }
 
-        imm.showSoftInput(view, 0);
+        if (imm != null) {
+            imm.showSoftInput(view, 0);
+        }
     }
 
     /**
@@ -228,7 +220,33 @@ public class  MainActivity extends AppCompatActivity {
             Button boardSquare = findViewById(lastSquareClickedID);
             EditText boardEditText = findViewById(R.id.edit_text_board);
             String inputtedTileLetter = boardEditText.getText().toString();
-            boardSquare.setText(inputtedTileLetter);
+
+            // To erase a tile from the board
+            if (inputtedTileLetter.length() == 0) {
+                boardSquare.setText(inputtedTileLetter);
+            }
+            // To add a tile to the board
+            else if (inputtedTileLetter.length() == 1 &&
+                     Character.isLetter(inputtedTileLetter.charAt(0))) {
+                boardSquare.setText(inputtedTileLetter);
+            }
+            // Invalid input by user to change a tile on the board
+            else {
+
+                // Create an Alert dialog
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Invalid Input")
+                       .setMessage("Enter an uppercase letter to add a regular tile or " +
+                                   "enter a lowercase letter to add a blank tile. \n\n" +
+                                   "Leave the text field empty to remove the tile.")
+                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {}
+                        });
+
+                // Get the AlertDialog from create()
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
 
             // Hide the keyboard
             hideKeyboard(this);
@@ -362,9 +380,44 @@ public class  MainActivity extends AppCompatActivity {
     /**
      * Function is called when the user clicks "Enter" to change the tiles in the rack
      *
-     * @param view the ID of the button whose border needs to be changed to white
+     * @param view the ID of the clicked button
      */
     public void onClickEnterRackTiles(View view) {
+        EditText rackEditText = findViewById(R.id.edit_text_rack);
+        String rackStr = rackEditText.getText().toString();
+
+        // Check to see if the inputted rack string is valid
+        if (!scrabbleEngine.rackStringIsValid(rackStr)) {
+            // Create an error Alert dialog
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Invalid Input")
+                    .setMessage("Enter uppercase letters for regular tiles " +
+                                "and asterisks (*) for blank tiles.")
+                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {}
+                    });
+
+            // Get the AlertDialog from create()
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+        else if (rackStr.length() != 7) {
+            // Create an warning Alert dialog
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Warning")
+                   .setMessage("For a standard Scrabble game, each player should have seven " +
+                               "tiles. Press \"Ok\" to ignore this warning.")
+                   .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {}
+                   });
+
+            // Get the AlertDialog from create()
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+
         hideKeyboard(this);
+        view.clearFocus();
     }
+
 }

@@ -1112,6 +1112,22 @@ public class ScrabbleEngine {
     }
 
     /**
+     * Function returns whether a string storing all the tiles in a rack is valid.
+     *
+     * @param   rackStr     the String storing all the tile in a rack
+     *
+     * @return              true if the string is valid, otherwise false
+     */
+    public boolean rackStringIsValid (String rackStr) {
+        for (int i = 0; i < rackStr.length(); i++) {
+            if (!Character.isUpperCase(rackStr.charAt(i)) && rackStr.charAt(i) != '*') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Function that is called that allows the user to execute the code which
      * find the best move based on a board and a rack.
      * This function allows the user to change the tiles on the board, change
