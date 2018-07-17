@@ -37,19 +37,16 @@ public class  MainActivity extends AppCompatActivity {
         // Get the table by ID
         TableLayout tableLayout = findViewById(R.id.table_scrabble_board);
 
-        // Go through every button in the Scrabble board and the tiles below
-        for (int row = 0; row < 16; row++) {
+        // Go through every button in the Scrabble board
+        for (int row = 0; row < 15; row++) {
             TableRow tableRow = (TableRow)tableLayout.getChildAt(row);
 
             for (int col = 0; col < tableRow.getChildCount(); col++) {
-
-                if (!(row == 15 && col == 8)) {
-                    // Change the height and width of the button to make it a square
-                    View view = tableRow.getChildAt(col);
-                    Button square = findViewById(view.getId());
-                    square.getLayoutParams().height = displayWidth / 15;
-                    square.getLayoutParams().width = displayWidth / 15;
-                }
+                // Change the height and width of the button to make it a square
+                View view = tableRow.getChildAt(col);
+                Button square = findViewById(view.getId());
+                square.getLayoutParams().height = displayWidth / 15;
+                square.getLayoutParams().width = displayWidth / 15;
             }
         }
     }
@@ -122,7 +119,7 @@ public class  MainActivity extends AppCompatActivity {
         // Go through every button in the Scrabble board
         // getChildCount() is not used since there are items
         // below the grid that should not be changed
-        for (int tableRowNum = 0; tableRowNum < 16; tableRowNum++) {
+        for (int tableRowNum = 0; tableRowNum < 15; tableRowNum++) {
 
             TableRow tableRow = (TableRow)tableLayout.getChildAt(tableRowNum);
 
@@ -148,7 +145,7 @@ public class  MainActivity extends AppCompatActivity {
         // Initialize the array to store all the IDs
 
         // Go through every button in the Scrabble board and the tiles below
-        for (int tableRowNum = 0; tableRowNum < 16; tableRowNum++) {
+        for (int tableRowNum = 0; tableRowNum < 15; tableRowNum++) {
 
             TableRow tableRow = (TableRow)tableLayout.getChildAt(tableRowNum);
 
@@ -186,12 +183,8 @@ public class  MainActivity extends AppCompatActivity {
         storeButtonIDs();
         setButtonDimensions();
         setButtonColors();
-        setTileRowPadding();
 
-        Button button = findViewById(R.id.button3);
-        button.setText("BEST MOVE");
         lastSquareClickedID = 0;
-
     }
 
     public void onClickEnterBoardTile(View view) {

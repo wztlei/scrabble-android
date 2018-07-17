@@ -2128,94 +2128,38 @@
     <TableRow
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="20dp"
         android:paddingLeft="20dp"
         android:paddingRight="20dp"
         android:paddingTop="20dp">
 
-
-        <Button
-            android:id="@+id/button_tile_1"
-            style="@style/Widget.AppCompat.Button.Borderless"
+        <EditText
+            android:id="@+id/edit_text_board"
+            style="@style/Widget.AppCompat.Light.AutoCompleteTextView"
             android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:background="@drawable/tile_square"
-            android:textAllCaps="false" />
+            android:layout_height="wrap_content"
+            android:layout_weight="4"
+            android:ems="10"
+            android:inputType="textPersonName"
+            android:hint="Tile on the Board"
+            android:textAppearance="@style/TextAppearance.AppCompat.Button"/>
 
         <Button
-            android:id="@+id/button_tile_2"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:background="@drawable/tile_square"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/button_tile_3"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:background="@drawable/tile_square"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/button_tile_4"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:background="@drawable/tile_square"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/button_tile_5"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:background="@drawable/tile_square"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/button_tile_6"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:background="@drawable/tile_square"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/button_tile_7"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:background="@drawable/tile_square"
-            android:textAllCaps="false" />
-
-
-        <Button
-            android:id="@+id/blank_1"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:background="@drawable/blank_square" />
-
-        <Button
-            android:id="@+id/button3"
+            android:id="@+id/button2"
             style="@style/Widget.AppCompat.Button.Small"
             android:layout_width="20dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:paddingRight="20dp"
             android:backgroundTint="@color/colorPrimary"
-            android:text="Best Move"
-            android:textColor="@color/colorWhite" />
-
+            android:text="Enter"
+            android:textColor="@color/colorWhite"
+            android:onClick="onClickEnterBoardTile"/>
     </TableRow>
 
     <TableRow
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingLeft="20dp"
-        android:paddingRight="20dp">
+        android:paddingRight="20dp" >
 
         <EditText
             android:id="@+id/edit_text_rack"
@@ -2245,27 +2189,34 @@
         android:paddingLeft="20dp"
         android:paddingRight="20dp">
 
-        <EditText
-            android:id="@+id/edit_text_board"
-            style="@style/Widget.AppCompat.Light.AutoCompleteTextView"
-            android:layout_width="20dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="4"
-            android:ems="10"
-            android:inputType="textPersonName"
-            android:hint="Tile on the Board"
-            android:textAppearance="@style/TextAppearance.AppCompat.Button"/>
-
         <Button
-            android:id="@+id/button2"
+            android:id="@+id/button4"
             style="@style/Widget.AppCompat.Button.Small"
             android:layout_width="20dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:backgroundTint="@color/colorPrimary"
-            android:text="Enter"
-            android:textColor="@color/colorWhite"
-            android:onClick="onClickEnterBoardTile"/>
+            android:text="Find Best Move"
+            android:textColor="@color/colorWhite" />
+
+        <Button
+            android:id="@+id/blank_1"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:background="@drawable/blank_square" />
+
+        <Button
+            android:id="@+id/button3"
+            style="@style/Widget.AppCompat.Button.Small"
+            android:layout_width="20dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingRight="20dp"
+            android:backgroundTint="@color/colorPrimary"
+            android:text="Erase Move"
+            android:textColor="@color/colorWhite" />
+
     </TableRow>
 
 </TableLayout>
