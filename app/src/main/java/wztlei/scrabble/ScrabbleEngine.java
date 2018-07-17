@@ -20,8 +20,13 @@
 
 package wztlei.scrabble;
 
+import android.content.Context;
+import android.view.View;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -38,65 +43,23 @@ public class ScrabbleEngine {
     public TrieNode trieRoot;
     public Tile[] tiles;
 
-    final String tilesFileName;
-    final String wordsFileName;
-    final String boardFileName;
-    final String gameFileName;
     final int numBoardRows;
     final int numBoardCols;
     final int numRackTiles;
 
     // Constructor function for the main class
-    public ScrabbleEngine () {
+    public ScrabbleEngine (HashMap <String, Integer> words, Tile[] tiles) {
 
-        tilesFileName = "tiles.txt";
-        wordsFileName = "jonbcard_github_words.txt";
-        boardFileName = "board.txt";
-        gameFileName = "test_game_blank.txt";
         numBoardRows = 15;
         numBoardCols = 15;
         numRackTiles = 7;
 
         // Get the data for the tiles and words
-        words = readWordData();
-        trieRoot = createWordTrie();
-        tiles = readTileData();
+        this.words = words;
+        this.trieRoot = createWordTrie();
+        this.tiles = tiles;
     }
 
-    /**
-     * @return  an unordered map of Strings containing all the words in the
-     *          scrabble dictionary. The key is type String since it is stores
-     *          the word. The mapped value is type integer since it stores if
-     *          the word is worth a bonus multiplier.
-     */
-    public HashMap <String, Integer> readWordData () {
-        // Declare vector to store all of the words in the scrabble dictionary
-        HashMap <String, Integer> wordHashMap =
-                new HashMap <String, Integer> ();
-
-        // Open file containing the word data
-        Scanner wordDataFile = null;
-
-        // Try opening the file
-        try {
-            wordDataFile = new Scanner(new FileInputStream(wordsFileName));
-        } catch (FileNotFoundException ex) {
-            System.out.println("Could not open " + wordsFileName);
-        }
-
-        // If file is opened
-        if (wordDataFile != null) {
-            while(wordDataFile.hasNextLine()) {
-                // IMPORTANT: The words must all be in uppercase.
-                String word = wordDataFile.nextLine();
-
-                // Insert the word into the unordered map
-                wordHashMap.put(word, 1);
-            }
-        }
-
-        return wordHashMap;
-    }
 
     /**
      * @return  a TrieNode that is the root of the trie
@@ -188,154 +151,7 @@ public class ScrabbleEngine {
         }
     }
 
-    /**
-     * @return  an ArrayList of Tiles with each tile object containing the
-     *          right data.
-     */
-    public Tile[] readTileData () {
 
-        // Declare array to store all the Tiles
-        Tile[] tileArray = new Tile[27];
-
-        Scanner tileDataFile = null;
-
-        // Try opening the file
-        try {
-            tileDataFile = new Scanner (new FileInputStream(tilesFileName));
-        } catch (FileNotFoundException ex) {
-            System.out.println("Could not open " + tilesFileName);
-        }
-
-        // Ensure data file is open
-        if (tileDataFile != null) {
-            // Loop through all 27 possible tiles and add them to the vector
-            for (int i = 0; i < 27; i++) {
-                Tile tile = new Tile();
-                tile.letter = tileDataFile.next().charAt(0);
-                tile.points = Integer.parseInt(tileDataFile.next());
-                tile.total = Integer.parseInt(tileDataFile.next());
-                tileArray[i] = tile;
-            }
-        }
-
-        return tileArray;
-    }
-
-    /**
-     * @return  a SquareGrid containing the data for each square on the board.
-     *          Key for the text file's characters:
-     *              W = Triple Word Score
-     *              w = Double Word Score
-     *              L = Triple Letter Score
-     *              l = Double Letter Score
-     *              . = Regular Square
-     *              * = Square is out of bounds
-     */
-    public Square [][] readBoardData () {
-
-        // Declare board ArrayList
-        Square[][] board = new Square[numBoardRows+2][numBoardCols+2];
-
-        Scanner boardDataFile = null;
-
-        try {
-            boardDataFile = new Scanner (new FileInputStream (boardFileName));
-        } catch (FileNotFoundException ex) {
-            System.out.println("Could not open " + boardFileName);
-        }
-
-        // Ensure file is open
-        if (boardDataFile != null) {
-            int rowNum = 0;
-
-            // Get all the rows in the board
-            // The rows of x's around the actual board are to ensure that
-            // tiles are not added outside the board
-            while (boardDataFile.hasNextLine()) {
-
-                // Read a line from the text file
-                String line = boardDataFile.nextLine();
-
-                // Declare an Array of Squares to store the data for each row
-                Square[] row = new Square[numBoardCols+2];
-
-                // Go through all the characters in each line
-                for (int i = 0; i < line.length(); i++) {
-                    Square sqr = new Square();
-                    sqr.letter = '.';
-                    sqr.row = rowNum;
-                    sqr.col = i;
-
-                    // Assign the Square type to sqr
-                    switch (line.charAt(i)) {
-                        case 'W': sqr.type = SquareType.TRIPLE_WORD;   break;
-                        case 'w': sqr.type = SquareType.DOUBLE_WORD;   break;
-                        case 'L': sqr.type = SquareType.TRIPLE_LETTER; break;
-                        case 'l': sqr.type = SquareType.DOUBLE_LETTER; break;
-                        case '.': sqr.type = SquareType.REGULAR;       break;
-                        case 'x': sqr.type = SquareType.OUTSIDE;       break;
-                    }
-
-                    // Assign the downCrossCheck vector to sqr
-                    switch (line.charAt(i)) {
-                        case 'x':
-                            sqr.downCrossCheck = new boolean[26];
-                            Arrays.fill(sqr.downCrossCheck, false);
-                            sqr.letter = '.';
-                            break;
-                        default:
-                            sqr.downCrossCheck = new boolean[26];
-                            Arrays.fill(sqr.downCrossCheck, true);
-                            sqr.letter = '.';
-                            break;
-                    }
-
-                    row[i] = sqr;
-                }
-
-                board[rowNum] = row;
-                rowNum++;
-            }
-
-        }
-
-        return board;
-    }
-
-    /**
-     * Fills the board with letters which are read from a text file.
-     *
-     * @param   board   a square grid containing the data for the state of the
-     *                  game.
-     */
-    public void readTestGameData (Square[][] board) {
-        // Open file containing the data
-        Scanner gameDataFile = null;
-
-        try {
-            gameDataFile = new Scanner (new FileInputStream (gameFileName));
-        } catch (FileNotFoundException ex) {
-            System.out.println("Could not open " + gameFileName);
-        }
-
-        // Ensure file is open
-        if (gameDataFile != null) {
-            // Go through all the rows
-            for (int rowNum = 0; rowNum < numBoardRows; rowNum++) {
-                // Get each row as input
-                String input = gameDataFile.next();
-
-                // Go through all the rows
-                for (int colNum = 0; colNum < numBoardCols; colNum++) {
-                    // row+1 and row+1 are used since the top row and column
-                    // (row 0 and column 0) of board are used to mark outside
-                    // squares
-                    // Fill in the tiles on the board
-                    board[rowNum+1][colNum+1].letter = input.charAt(colNum);
-                }
-            }
-        }
-    }
 
     /**
      * Updates the downCrossCheck property of each square in the board
@@ -1133,7 +949,7 @@ public class ScrabbleEngine {
      * This function allows the user to change the tiles on the board, change
      * the tiles on the rack, find the best move, and exit.
      */
-    public void runScrabble () {
+  /*  public void runScrabble () {
         // Get the data for the board
         Square[][] board = readBoardData();
         readTestGameData(board);
@@ -1252,7 +1068,7 @@ public class ScrabbleEngine {
                 }
             }
         }
-    }
+    }*/
 
 
 }

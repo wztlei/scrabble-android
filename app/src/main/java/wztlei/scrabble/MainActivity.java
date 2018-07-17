@@ -14,19 +14,186 @@ import android.widget.EditText;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
 
 public class MainActivity extends AppCompatActivity {
 
+
     ArrayList<String> boardStrings;
     HashMap<Integer, Square> boardButtonIDs;
     int lastSquareClickedID;
     ScrabbleEngine scrabbleEngine;
+    Square[][] scrabbleBoard = null;
+    final String savedScrabbleKey = "savedScrabbleBoard";
+
+
+    /**
+     * @return  an unordered map of Strings containing all the words in the
+     *          scrabble dictionary. The key is type String since it is stores
+     *          the word. The mapped value is type integer since it stores if
+     *          the word is worth a bonus multiplier.
+     */
+    public HashMap <String, Integer> readWordData () {
+
+        // Declare hash map to store all of the words in the scrabble dictionary
+        HashMap <String, Integer> wordHashMap = new HashMap<> ();
+        TextFileNames textFileNames = new TextFileNames();
+        String wordsFileName = textFileNames.wordsFileName;
+
+        Scanner wordDataFile = null;
+
+        try {
+            InputStream inputStream = getAssets().open(wordsFileName);
+            wordDataFile = new Scanner (inputStream);
+        } catch (FileNotFoundException ex) {
+            System.out.println("Could not open " + wordsFileName);
+        } catch (IOException ex) {
+            System.out.println("IOException due to " + wordsFileName);
+        }
+
+        // If file is opened
+        if (wordDataFile != null) {
+            while(wordDataFile.hasNextLine()) {
+                // IMPORTANT: The words must all be in uppercase.
+                String word = wordDataFile.nextLine();
+
+                // Insert the word into the unordered map
+                wordHashMap.put(word, 1);
+            }
+        }
+
+        return wordHashMap;
+    }
+
+    /**
+     * @return  an ArrayList of Tiles with each tile object containing the
+     *          right data.
+     */
+    public Tile[] readTileData () {
+
+        // Declare array to store all the Tiles
+        Tile[] tileArray = new Tile[27];
+        TextFileNames textFileNames = new TextFileNames();
+        String tilesFileName = textFileNames.tilesFileName;
+
+        Scanner tileDataFile = null;
+
+        try {
+            InputStream inputStream = getAssets().open(tilesFileName);
+            tileDataFile = new Scanner (inputStream);
+        } catch (FileNotFoundException ex) {
+            System.out.println("Could not open " + tilesFileName);
+        } catch (IOException ex) {
+            System.out.println("IOException due to " + tilesFileName);
+        }
+
+        // Ensure data file is open
+        if (tileDataFile != null) {
+            // Loop through all 27 possible tiles and add them to the vector
+            for (int i = 0; i < 27; i++) {
+                Tile tile = new Tile();
+                tile.letter = tileDataFile.next().charAt(0);
+                tile.points = Integer.parseInt(tileDataFile.next());
+                tile.total = Integer.parseInt(tileDataFile.next());
+                tileArray[i] = tile;
+            }
+        }
+
+        return tileArray;
+    }
+
+    /**
+     * @return  a SquareGrid containing the data for each square on the board.
+     *          Key for the text file's characters:
+     *              W = Triple Word Score
+     *              w = Double Word Score
+     *              L = Triple Letter Score
+     *              l = Double Letter Score
+     *              . = Regular Square
+     *              * = Square is out of bounds
+     */
+    public Square [][] readBoardData () {
+
+        // Declare board array
+        Square[][] board = new Square[17][17];
+        TextFileNames textFileNames = new TextFileNames();
+        String boardFileName = textFileNames.boardFileName;
+
+        Scanner boardDataFile = null;
+
+        try {
+            InputStream inputStream = getAssets().open(boardFileName);
+            boardDataFile = new Scanner (inputStream);
+        } catch (FileNotFoundException ex) {
+            System.out.println("Could not open " + boardFileName);
+        } catch (IOException ex) {
+            System.out.println("IOException due to " + boardFileName);
+        }
+
+        // Ensure file is open
+        if (boardDataFile != null) {
+            int rowNum = 0;
+
+            // Get all the rows in the board
+            // The rows of x's around the actual board are to ensure that
+            // tiles are not added outside the board
+            while (boardDataFile.hasNextLine()) {
+
+                // Read a line from the text file
+                String line = boardDataFile.nextLine();
+
+                // Declare an Array of Squares to store the data for each row
+                Square[] row = new Square[17];
+
+                // Go through all the characters in each line
+                for (int i = 0; i < line.length(); i++) {
+                    Square sqr = new Square();
+                    sqr.letter = '.';
+                    sqr.row = rowNum;
+                    sqr.col = i;
+
+                    // Assign the Square type to sqr
+                    switch (line.charAt(i)) {
+                        case 'W': sqr.type = SquareType.TRIPLE_WORD;   break;
+                        case 'w': sqr.type = SquareType.DOUBLE_WORD;   break;
+                        case 'L': sqr.type = SquareType.TRIPLE_LETTER; break;
+                        case 'l': sqr.type = SquareType.DOUBLE_LETTER; break;
+                        case '.': sqr.type = SquareType.REGULAR;       break;
+                        case 'x': sqr.type = SquareType.OUTSIDE;       break;
+                    }
+
+                    // Assign the downCrossCheck vector to sqr
+                    switch (line.charAt(i)) {
+                        case 'x':
+                            sqr.downCrossCheck = new boolean[26];
+                            Arrays.fill(sqr.downCrossCheck, false);
+                            sqr.letter = '.';
+                            break;
+                        default:
+                            sqr.downCrossCheck = new boolean[26];
+                            Arrays.fill(sqr.downCrossCheck, true);
+                            sqr.letter = '.';
+                            break;
+                    }
+
+                    row[i] = sqr;
+                }
+
+                board[rowNum] = row;
+                rowNum++;
+            }
+
+        }
+
+        return board;
+    }
 
     /**
      * Changes the height and width of each button in the grid of Scrabble squares
@@ -42,19 +209,47 @@ public class MainActivity extends AppCompatActivity {
         // Get the table by ID
         TableLayout tableLayout = findViewById(R.id.table_scrabble_board);
 
-        // Go through every button in the Scrabble board
-        for (int row = 0; row < 15; row++) {
-            TableRow tableRow = (TableRow)tableLayout.getChildAt(row);
+        // Go through every button in the displayed Scrabble board
+        for (int tableRowNum = 0; tableRowNum < 15; tableRowNum++) {
+            TableRow tableRow = (TableRow)tableLayout.getChildAt(tableRowNum);
 
-            for (int col = 0; col < tableRow.getChildCount(); col++) {
+            for (int tableColNum = 0; tableColNum < tableRow.getChildCount(); tableColNum++) {
                 // Change the height and width of the button to make it a square
-                View view = tableRow.getChildAt(col);
+                View view = tableRow.getChildAt(tableColNum);
                 Button square = findViewById(view.getId());
                 square.getLayoutParams().height = displayWidth / 15;
                 square.getLayoutParams().width = displayWidth / 15;
             }
         }
     }
+
+    /**
+     * Function is called to update the state of scrabbleBoard whenever.
+     */
+    protected void setButtonTexts () {
+
+        // Get the table by ID
+        TableLayout tableLayout = findViewById(R.id.table_scrabble_board);
+
+        // Go through all the buttons
+        for (int tableRowNum = 0; tableRowNum < 15; tableRowNum++) {
+            TableRow tableRow = (TableRow) tableLayout.getChildAt(tableRowNum);
+
+            for (int tableColNum = 0; tableColNum < 15; tableColNum++) {
+                Button square = (Button) tableRow.getChildAt(tableColNum);
+                if (scrabbleBoard[tableRowNum+1][tableColNum+1].letter == '.') {
+                    square.setText("");
+                }
+                else {
+                    String str = "";
+                    str += scrabbleBoard[tableRowNum+1][tableColNum+1].letter;
+                    square.setText(str);
+                }
+            }
+            System.out.println();
+        }
+    }
+
 
     protected void readBoardStrings() {
         TextFileNames textFileNames = new TextFileNames();
@@ -138,6 +333,11 @@ public class MainActivity extends AppCompatActivity {
                 Button square = findViewById(view.getId());
                 char squareChar = boardStrings.get(tableRowNum+1).charAt(tableColNum+1);
 
+                // Include an exception if the square already has a tile on it
+                if (square.getText().length() > 0) {
+                    squareChar = 't';
+                }
+
                 // Change the background to the proper drawable resource
                 switch (squareChar) {
                     case 'W': square.setBackgroundResource(R.drawable.triple_word_square);   break;
@@ -151,24 +351,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
 
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        readBoardStrings();
-        storeButtonIDs();
-        setButtonDimensions();
-        setButtonColors();
-        scrabbleEngine = new ScrabbleEngine();
-
-        // Change the SelectAllOnFocus for the EditText field
-        // since the property is not working in the XML
-        EditText rackEditText = findViewById(R.id.edit_text_rack);
-        rackEditText.setSelectAllOnFocus(true);
-
-        lastSquareClickedID = 0;
-    }
 
     /**
      * Function is called to hide the keyboard
@@ -208,53 +391,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Function is called when the user clicks "Enter" to change a tile on the board
-     *
-     * @param view the ID of the button whose border needs to be changed to white
-     */
-    public void onClickEnterBoardTile(View view) {
 
-        if (lastSquareClickedID != 0) {
-            // Change the text displayed on the tile on the board
-            Button boardSquare = findViewById(lastSquareClickedID);
-            EditText boardEditText = findViewById(R.id.edit_text_board);
-            String inputtedTileLetter = boardEditText.getText().toString();
-
-            // To erase a tile from the board
-            if (inputtedTileLetter.length() == 0) {
-                boardSquare.setText(inputtedTileLetter);
-            }
-            // To add a tile to the board
-            else if (inputtedTileLetter.length() == 1 &&
-                     Character.isLetter(inputtedTileLetter.charAt(0))) {
-                boardSquare.setText(inputtedTileLetter);
-            }
-            // Invalid input by user to change a tile on the board
-            else {
-
-                // Create an Alert dialog
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("Invalid Input")
-                       .setMessage("Enter an uppercase letter to add a regular tile or " +
-                                   "enter a lowercase letter to add a blank tile. \n\n" +
-                                   "Leave the text field empty to remove the tile.")
-                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {}
-                        });
-
-                // Get the AlertDialog from create()
-                AlertDialog dialog = builder.create();
-                dialog.show();
-            }
-
-            // Hide the keyboard
-            hideKeyboard(this);
-
-            // Change the background of the button
-            drawButtonBlackBorder(lastSquareClickedID);
-        }
-    }
 
     /**
      * Changes the border of the button to white
@@ -314,8 +451,6 @@ public class MainActivity extends AppCompatActivity {
         int colNum = boardButtonIDs.get(buttonID).col;
         char squareChar = boardStrings.get(rowNum).charAt(colNum);
 
-        System.out.println(boardSquare.getText());
-
         // Use the tile background if the button has a tile on it
         if (boardSquare.getText().length() > 0 && !boardSquare.getText().equals(" ")) {
             boardSquare.setBackgroundResource(R.drawable.tile_square_pressed);
@@ -343,6 +478,56 @@ public class MainActivity extends AppCompatActivity {
             case 't':
                 boardSquare.setBackgroundResource(R.drawable.tile_square_pressed);
                 break;
+        }
+    }
+
+    /**
+     * Function is called when the user clicks "Enter" to change a tile on the board
+     *
+     * @param view the ID of the button whose border needs to be changed to white
+     */
+    public void onClickEnterBoardTile(View view) {
+
+        if (lastSquareClickedID != 0) {
+            // Change the text displayed on the tile on the board
+            Button boardSquare = findViewById(lastSquareClickedID);
+            EditText boardEditText = findViewById(R.id.edit_text_board);
+            String inputtedTileLetter = boardEditText.getText().toString();
+
+            // To erase a tile from the board
+            if (inputtedTileLetter.length() == 0) {
+                boardSquare.setText(inputtedTileLetter);
+                updateStoredScrabbleBoard();
+            }
+            // To add a tile to the board
+            else if (inputtedTileLetter.length() == 1 &&
+                    Character.isLetter(inputtedTileLetter.charAt(0))) {
+                boardSquare.setText(inputtedTileLetter);
+                updateStoredScrabbleBoard();
+            }
+            // Invalid input by user to change a tile on the board
+            else {
+
+                // Create an Alert dialog
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Invalid Input")
+                        .setMessage("Enter an uppercase letter to add a regular tile or " +
+                                "enter a lowercase letter to add a blank tile. \n\n" +
+                                "Leave the text field empty to remove the tile.")
+                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {}
+                        });
+
+                // Get the AlertDialog from create()
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+
+            // Hide the keyboard
+            hideKeyboard(this);
+
+            // Change the background of the button
+            drawButtonBlackBorder(lastSquareClickedID);
         }
     }
 
@@ -375,6 +560,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Update the variable storing the ID of the last button pressed
         lastSquareClickedID = view.getId();
+
+
     }
 
     /**
@@ -418,6 +605,82 @@ public class MainActivity extends AppCompatActivity {
 
         hideKeyboard(this);
         view.clearFocus();
+    }
+
+    /**
+     * Function is called to update the state of scrabbleBoard whenever.
+     */
+    protected void updateStoredScrabbleBoard () {
+        // Get the table by ID
+        TableLayout tableLayout = findViewById(R.id.table_scrabble_board);
+
+        // Go through every button in the displayed Scrabble board
+        for (int tableRowNum = 0; tableRowNum < 15; tableRowNum++) {
+            TableRow tableRow = (TableRow)tableLayout.getChildAt(tableRowNum);
+
+            for (int tableColNum = 0; tableColNum < tableRow.getChildCount(); tableColNum++) {
+
+                Button square = (Button) tableRow.getChildAt(tableColNum);
+
+                if (square.getText().length() == 0) {
+                    scrabbleBoard[tableRowNum+1][tableColNum+1].letter = '.';
+                }
+                else {
+                    scrabbleBoard[tableRowNum+1][tableColNum+1].letter = square.getText().charAt(0);
+                }
+            }
+        }
+
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+
+        String savedBoardString = "";
+
+        // Save UI state changes to the savedInstanceState.
+        // This bundle will be passed to onCreate if the process is killed and restarted.
+        for (int rowNum = 1; rowNum <= 15; rowNum++) {
+            for (int colNum = 1; colNum <= 15; colNum++) {
+                savedBoardString += scrabbleBoard[rowNum][colNum].letter;
+            }
+        }
+
+        savedInstanceState.putString(savedScrabbleKey, savedBoardString);
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        readBoardStrings();
+        storeButtonIDs();
+        setButtonDimensions();
+
+        scrabbleEngine = new ScrabbleEngine(readWordData(), readTileData());
+        scrabbleBoard = readBoardData();
+
+        if (savedInstanceState != null) {
+
+            String savedBoardString = savedInstanceState.getString(savedScrabbleKey);
+
+            for (int i = 0; i < savedBoardString.length(); i++) {
+                scrabbleBoard[i/15 + 1][i%15 + 1].letter = savedBoardString.charAt(i);
+            }
+
+            setButtonTexts();
+        }
+
+        setButtonColors();
+
+        // Change the SelectAllOnFocus for the EditText field
+        // since the property is not working in the XML
+        EditText rackEditText = findViewById(R.id.edit_text_rack);
+        rackEditText.setSelectAllOnFocus(true);
+
+        lastSquareClickedID = 0;
     }
 
 }
