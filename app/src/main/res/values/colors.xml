@@ -11,4 +11,5 @@
     <color name="colorDoubleLetterSquare">#B3D9FF</color>
     <color name="colorTile">#E0A66C</color>
     <color name="colorWhite">#FFFFFF</color>
+    <color name="colorBlack">#000000</color>
 </resources>
