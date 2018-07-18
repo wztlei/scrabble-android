@@ -2198,7 +2198,8 @@
             android:layout_weight="1"
             android:backgroundTint="@color/colorPrimary"
             android:text="Find Best Move"
-            android:textColor="@color/colorWhite" />
+            android:textColor="@color/colorWhite"
+            android:onClick="onClickFindBestMove"/>
 
         <Button
             android:id="@+id/blank_1"
@@ -2216,7 +2217,8 @@
             android:paddingRight="20dp"
             android:backgroundTint="@color/colorPrimary"
             android:text="Erase Move"
-            android:textColor="@color/colorWhite" />
+            android:textColor="@color/colorWhite"
+            android:onClick="onClickEraseMove"/>
 
     </TableRow>
 

@@ -14,7 +14,6 @@ import android.widget.EditText;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     int lastSquareClickedID;
     ScrabbleEngine scrabbleEngine;
     Square[][] scrabbleBoard = null;
+    String oldScrabbleBoard = "";
     final String savedScrabbleKey = "savedScrabbleBoard";
 
 
@@ -192,6 +192,9 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+        scrabbleEngine.updateDownCrossChecks(board);
+        scrabbleEngine.updateMinAcrossWordLength(board);
+
         return board;
     }
 
@@ -233,6 +236,9 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+
+        scrabbleEngine.updateDownCrossChecks(board);
+        scrabbleEngine.updateMinAcrossWordLength(board);
     }
 
     /**
@@ -286,7 +292,6 @@ public class MainActivity extends AppCompatActivity {
                     square.setText(str);
                 }
             }
-            System.out.println();
         }
     }
 
@@ -632,8 +637,7 @@ public class MainActivity extends AppCompatActivity {
             // Create an warning Alert dialog
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Warning")
-                   .setMessage("For a standard Scrabble game, each player should have seven " +
-                               "tiles. Press \"Ok\" to ignore this warning.")
+                   .setMessage("For a standard Scrabble game, each player should have seven tiles.")
                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {}
                    });
@@ -671,21 +675,17 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        scrabbleEngine.updateDownCrossChecks(scrabbleBoard);
+        scrabbleEngine.updateMinAcrossWordLength(scrabbleBoard);
+        
+        oldScrabbleBoard = scrabbleEngine.boardTilesToString(scrabbleBoard);
     }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
 
-        String savedBoardString = "";
-
-        // Save UI state changes to the savedInstanceState.
-        // This bundle will be passed to onCreate if the process is killed and restarted.
-        for (int rowNum = 1; rowNum <= 15; rowNum++) {
-            for (int colNum = 1; colNum <= 15; colNum++) {
-                savedBoardString += scrabbleBoard[rowNum][colNum].letter;
-            }
-        }
+        String savedBoardString = scrabbleEngine.boardTilesToString(scrabbleBoard);
 
         savedInstanceState.putString(savedScrabbleKey, savedBoardString);
     }
@@ -712,14 +712,12 @@ public class MainActivity extends AppCompatActivity {
                         readTestGameData(scrabbleBoard);
                         setButtonTexts();
                         setButtonColors();
+                        oldScrabbleBoard = scrabbleEngine.boardTilesToString(scrabbleBoard);
                     }
                 })
                 .setPositiveButton("No", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // User cancelled the dialog
-                    }
+                    public void onClick(DialogInterface dialog, int id) {}
                 });
-
 
         // Get the AlertDialog from create()
         AlertDialog dialog = builder.create();
@@ -728,11 +726,7 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
 
             String savedBoardString = savedInstanceState.getString(savedScrabbleKey);
-
-            for (int i = 0; i < savedBoardString.length(); i++) {
-                scrabbleBoard[i/15 + 1][i%15 + 1].letter = savedBoardString.charAt(i);
-            }
-
+            scrabbleEngine.fillBoardWithString(scrabbleBoard, savedBoardString);
             setButtonTexts();
         }
 
@@ -743,7 +737,93 @@ public class MainActivity extends AppCompatActivity {
         EditText rackEditText = findViewById(R.id.edit_text_rack);
         rackEditText.setSelectAllOnFocus(true);
 
+        //TODO: Remove default edit text
+        rackEditText.setText("ENTIREE");
+
         lastSquareClickedID = 0;
     }
 
+    /**
+     * Function is called when the user clicks "Find Best Move"
+     *
+     * @param view the ID of the clicked button
+     */
+    public void onClickFindBestMove(View view) {
+        EditText rackEditText = findViewById(R.id.edit_text_rack);
+        String rackStr = rackEditText.getText().toString();
+
+        // Check to see if the inputted rack string is valid
+        if (!scrabbleEngine.rackStringIsValid(rackStr) || rackStr.length() == 0) {
+            // Create an error Alert dialog
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Invalid Input")
+                   .setMessage("Enter uppercase letters for regular tiles " +
+                               "and asterisks (*) for blank tiles.")
+                   .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {}
+                   });
+
+            // Get the AlertDialog from create()
+            AlertDialog dialog = builder.create();
+            dialog.show();
+            return;
+        }
+        // If there are too many or too little tiles in the rack,
+        // display a warning but allow the user to continue
+        else if (rackStr.length() != 7) {
+            // Create an warning Alert dialog
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Warning")
+                   .setMessage("For a standard Scrabble game, each player should have seven tiles.")
+                   .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                       public void onClick(DialogInterface dialog, int id) {}
+                   });
+
+            // Get the AlertDialog from create()
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+
+        // Find the best move
+        int[] rack = scrabbleEngine.fillRack(rackStr);
+        ScrabbleMove bestMove = scrabbleEngine.findBestMove(scrabbleBoard, rack);
+        scrabbleEngine.addMoveToBoard(scrabbleBoard, bestMove);
+
+        // Update the display
+        setButtonTexts();
+        setButtonColors();
+
+        // Create an Alert dialog to tell the user information about the best move
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        String bestMoveMessage = "Points: " + bestMove.points + "\n";
+
+        // Only output the specifics of the move if it exists
+        if (bestMove.size() > 0) {
+            bestMoveMessage += "Tiles Placed: ";
+
+            for (int i = 0; i < bestMove.size(); i++) {
+                bestMoveMessage += bestMove.get(i).letter + " ";
+            }
+        }
+        builder.setTitle("Best Move")
+                .setMessage(bestMoveMessage)
+                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {}
+                });
+
+        // Get the AlertDialog from create()
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    public void onClickEraseMove(View view) {
+        /*if (scrabbleBoard != null && oldScrabbleBoard.length() > 0) {
+            scrabbleEngine.fillBoardWithString(scrabbleBoard, oldScrabbleBoard);
+            oldScrabbleBoard = scrabbleEngine.boardTilesToString(scrabbleBoard);
+
+            // Update the display
+            setButtonTexts();
+            setButtonColors();
+        }*/
+    }
 }
