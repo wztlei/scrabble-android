@@ -605,8 +605,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Update the variable storing the ID of the last button pressed
         lastSquareClickedID = view.getId();
-
-
     }
 
     /**
@@ -619,32 +617,13 @@ public class MainActivity extends AppCompatActivity {
         String rackStr = rackEditText.getText().toString();
 
         // Check to see if the inputted rack string is valid
-        if (!scrabbleEngine.rackStringIsValid(rackStr)) {
-            // Create an error Alert dialog
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Invalid Input")
-                    .setMessage("Enter uppercase letters for regular tiles " +
-                                "and asterisks (*) for blank tiles.")
-                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {}
-                    });
-
-            // Get the AlertDialog from create()
-            AlertDialog dialog = builder.create();
-            dialog.show();
+        if (!scrabbleEngine.rackStringIsValid(rackStr) || rackStr.length() == 0) {
+            displayRackError();
         }
+        // If there are too many or too little tiles in the rack,
+        // display a warning but allow the user to continue
         else if (rackStr.length() != 7) {
-            // Create an warning Alert dialog
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Warning")
-                   .setMessage("For a standard Scrabble game, each player should have seven tiles.")
-                   .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {}
-                   });
-
-            // Get the AlertDialog from create()
-            AlertDialog dialog = builder.create();
-            dialog.show();
+            displayRackWarning();
         }
 
         hideKeyboard(this);
@@ -677,7 +656,7 @@ public class MainActivity extends AppCompatActivity {
 
         scrabbleEngine.updateDownCrossChecks(scrabbleBoard);
         scrabbleEngine.updateMinAcrossWordLength(scrabbleBoard);
-        
+
         oldScrabbleBoard = scrabbleEngine.boardTilesToString(scrabbleBoard);
     }
 
@@ -737,10 +716,36 @@ public class MainActivity extends AppCompatActivity {
         EditText rackEditText = findViewById(R.id.edit_text_rack);
         rackEditText.setSelectAllOnFocus(true);
 
-        //TODO: Remove default edit text
-        rackEditText.setText("ENTIREE");
-
         lastSquareClickedID = 0;
+    }
+
+    protected void displayRackError() {
+        // Create an error Alert dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Invalid Input")
+                .setMessage("Enter uppercase letters for regular tiles " +
+                        "and asterisks (*) for blank tiles.")
+                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {}
+                });
+
+        // Get the AlertDialog from create()
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    protected void displayRackWarning() {
+        // Create an warning Alert dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Warning")
+                .setMessage("For a standard Scrabble game, each player should have seven tiles.")
+                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {}
+                });
+
+        // Get the AlertDialog from create()
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     /**
@@ -754,34 +759,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Check to see if the inputted rack string is valid
         if (!scrabbleEngine.rackStringIsValid(rackStr) || rackStr.length() == 0) {
-            // Create an error Alert dialog
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Invalid Input")
-                   .setMessage("Enter uppercase letters for regular tiles " +
-                               "and asterisks (*) for blank tiles.")
-                   .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {}
-                   });
-
-            // Get the AlertDialog from create()
-            AlertDialog dialog = builder.create();
-            dialog.show();
+            displayRackError();
             return;
-        }
-        // If there are too many or too little tiles in the rack,
-        // display a warning but allow the user to continue
-        else if (rackStr.length() != 7) {
-            // Create an warning Alert dialog
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Warning")
-                   .setMessage("For a standard Scrabble game, each player should have seven tiles.")
-                   .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                       public void onClick(DialogInterface dialog, int id) {}
-                   });
-
-            // Get the AlertDialog from create()
-            AlertDialog dialog = builder.create();
-            dialog.show();
         }
 
         // Find the best move
@@ -805,25 +784,34 @@ public class MainActivity extends AppCompatActivity {
                 bestMoveMessage += bestMove.get(i).letter + " ";
             }
         }
+
         builder.setTitle("Best Move")
                 .setMessage(bestMoveMessage)
                 .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {}
+                    public void onClick(DialogInterface dialog, int id) {
+                    }
                 });
 
         // Get the AlertDialog from create()
         AlertDialog dialog = builder.create();
         dialog.show();
+
+
+        // If there are too many or too little tiles in the rack,
+        // display a warning but allow the user to continue
+        if (rackStr.length() != 7) {
+            displayRackWarning();
+        }
     }
 
     public void onClickEraseMove(View view) {
-        /*if (scrabbleBoard != null && oldScrabbleBoard.length() > 0) {
+        if (scrabbleBoard != null && oldScrabbleBoard.length() > 0) {
             scrabbleEngine.fillBoardWithString(scrabbleBoard, oldScrabbleBoard);
             oldScrabbleBoard = scrabbleEngine.boardTilesToString(scrabbleBoard);
 
             // Update the display
             setButtonTexts();
             setButtonColors();
-        }*/
+        }
     }
 }

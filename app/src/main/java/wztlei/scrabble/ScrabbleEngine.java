@@ -72,7 +72,7 @@ public class ScrabbleEngine {
         // Add every word in the words HashMap
         for (String word : words.keySet()) {
 
-            if (word.length() > 2 && word.matches("[A-Z]+")) {
+            if (word.length() >= 2 && word.matches("[A-Z]+")) {
                 insertIntoTrie(root, word);
             }
         }
@@ -163,8 +163,8 @@ public class ScrabbleEngine {
      */
     public void updateDownCrossChecks (Square[][] board) {
         // Go through all the squares in the board where tiles can be placed
-        for (int row = 1; row <= numBoardRows; row++) {System.out.println();
-            for (int col = 1; col <= numBoardCols; col++) {System.out.print(col + " ");
+        for (int row = 1; row <= numBoardRows; row++) {
+            for (int col = 1; col <= numBoardCols; col++) {
 
                 // Only check squares on which tiles can be placed
                 if (board[row][col].letter == '.') {
@@ -332,8 +332,7 @@ public class ScrabbleEngine {
                 if (board[row][col].letter != '.') {
                     // Get the best move for placing tiles across and
                     // for placing tiles down
-                    ScrabbleMove bestAcrossMove = findBestAcrossMove
-                            (board, rack);
+                    ScrabbleMove bestAcrossMove = findBestAcrossMove(board, rack);
                     ScrabbleMove bestDownMove = findBestDownMove(board, rack);
 
                     // Select either the best across move or the down move
@@ -888,7 +887,7 @@ public class ScrabbleEngine {
     public void addMoveToBoard (Square[][] board, ScrabbleMove move) {
 
         for (int i = 0; i < move.size(); i++) {
-            board[move.get(i).row][move.get(i).col] = move.get(i);
+            board[move.get(i).row][move.get(i).col].letter = move.get(i).letter;
         }
 
         updateDownCrossChecks(board);
@@ -983,5 +982,141 @@ public class ScrabbleEngine {
 
         updateMinAcrossWordLength(board);
         updateDownCrossChecks(board);
+    }
+
+    public void extendRightTestWrapper (Square[][] board, int[] rack, Square currSquare) {
+        ScrabbleMove currMove = new ScrabbleMove();
+        ScrabbleMove bestMove = new ScrabbleMove();
+
+        extendRightTest(board, rack, trieRoot, currSquare, currSquare.minAcrossWordLength,
+                currMove, bestMove, "");
+    }
+
+    /**
+     * Finds the best move by extending rightwards from a given square
+     *
+     * @param   board           Array storing the state of the board
+     * @param   rack            an Array of integers storing the number of
+     *                          each type of tile
+     * @param   node            the node in the trie storing the last
+     *                          letter added to the word being built and
+     *                          the next possible letters
+     * @param   currSquare      the square on which a new tile may be placed
+     *                          for the current move
+     * @param   minWordLength   the minimum word length of the word to be
+     *                          created so that it connects with
+     *                          pre-existing words
+     * @param   currMove        the Squares on which tiles have been placed
+     *                          of the current move that is being attempted
+     * @param   bestMove        the best possible move thus far represented
+     *                          by a Array of squares
+     * @param   partWord        the left part of the word being built.
+     *                          Parameter only used in debugging.
+     */
+    public void extendRightTest (Square[][] board, int[] rack, TrieNode node,
+                             Square currSquare, int minWordLength,
+                             ScrabbleMove currMove, ScrabbleMove bestMove,
+                             String partWord) {
+
+        Square sqr = board[currSquare.row][currSquare.col];
+        System.out.println(partWord);
+
+        // If the square is empty then simply do nothing
+        if (sqr.type == SquareType.OUTSIDE) {
+            System.out.println("square is outside");
+        }
+        // If the current square is empty
+        else if (sqr.letter == '.')
+        {
+            System.out.println("square is empty");
+            // Determine if a legal move has been found ie. a word is created and
+            // the word is long enough so that it can connect with pre-existing tiles
+            if (node.isTerminalNode == true &&
+                    currMove.size() >= minWordLength) {
+
+                calcAcrossPts(board, currMove);
+
+                if (currMove.points > bestMove.points) {
+                    bestMove.clear();
+                    bestMove.addAll(currMove);
+                    bestMove.points = currMove.points;
+                }
+            }
+
+            // Go through all the children of the node
+            for (int i = 0; i < node.children.size(); i++) {
+                System.out.println("child " + i + " of " + node.children.size() + " children of letter " + sqr.letter);
+                char childLetter = node.children.get(i).letter ;
+                int childLetterIndex = childLetter - 'A';
+
+                // Check to see if the letter of the child is in our rack AND
+                // it is in the downCrossCheck set of the square
+                if (rack[childLetterIndex] > 0 &&
+                        sqr.downCrossCheck[childLetterIndex]) {
+
+                    // Remove the tile from the rack
+                    rack[childLetterIndex]--;
+
+                    // Add the square onto the current move
+                    addSqrToMove(sqr.row, sqr.col, childLetter, currMove);
+
+                    // Move rightwards to the next square
+                    currSquare = board[sqr.row][sqr.col+1];
+
+                    // Recursively call itself to continued extending right
+                    extendRightTest(board, rack, node.children.get(i), currSquare,
+                            minWordLength, currMove, bestMove,
+                            partWord+childLetter);
+
+                    // Remove the square from the current move
+                    currMove.remove(currMove.size() - 1);
+
+                    // Place tile back in the rack
+                    rack[childLetterIndex]++;
+                }
+                // Otherwise try using a blank tile
+                else if (rack[26] > 0 && sqr.downCrossCheck[childLetterIndex]) {
+                    // Remove the tile from the rack
+                    rack[26]--;
+
+                    // Add the square onto the current move
+                    addSqrToMove(sqr.row, sqr.col,
+                            Character.toLowerCase(childLetter),
+                            currMove);
+
+                    // Move rightwards to the next square
+                    currSquare = board[sqr.row][sqr.col+1];
+
+                    // Recursively call itself to continued extending right
+                    extendRightTest(board, rack, node.children.get(i), currSquare,
+                            minWordLength, currMove, bestMove,
+                            partWord + childLetter);
+
+                    // Remove the square from the current move
+                    currMove.remove(currMove.size() - 1);
+
+                    // Place tile back in the rack
+                    rack[26]++;
+                }
+            }
+        }
+        // The square contains a letter
+        else {
+            System.out.println("square contains letter");
+            int sqrLetterIndex = Character.toUpperCase(sqr.letter) - 'A';
+            int childIndex = node.letterIndexes[sqrLetterIndex];
+
+            // Check to see if node has a child with the letter occupying the square
+            if (childIndex != -1)
+            {
+                // Move rightwards to the next square
+                currSquare = board[currSquare.row][currSquare.col+1];
+                System.out.println("recurse if square contains letter");
+                // Recursively call itself to continued extending right
+                extendRightTest(board, rack, node.children.get(childIndex),
+                        currSquare, minWordLength, currMove, bestMove,
+                        partWord+ sqr.letter);
+            }
+        }
     }
 }
